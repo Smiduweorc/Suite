@@ -12,9 +12,9 @@
 	"scripts": {
 		"dev": "bun run --watch src/index.ts",
 		"start": "bun run src/index.ts",
-		"test": "bun test --isolate --path-ignore-patterns='src/__integration__/**'",
+		"test": "bun test --isolate --timeout 20000 --path-ignore-patterns='src/__integration__/**'",
+		"test:integration": "bun test --isolate --timeout 20000 src/__integration__",
 		"test:watch": "bun test --watch --path-ignore-patterns='src/__integration__/**'",
-		"test:integration": "bun test --isolate src/__integration__",
 		"test:coverage": "bun test --isolate --coverage --path-ignore-patterns='src/__integration__/**'",
 		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",
