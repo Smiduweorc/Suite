@@ -28,17 +28,24 @@ export function LoginScreen({ onSignedIn }: { onSignedIn: (session: Session) => 
 	const mailbox = canonical(email);
 
 	async function submit() {
+		console.log("1. Submit clicked. Email:", email);
 		setBusy(true);
 		setError(null);
-
+	
 		try {
-			onSignedIn(await signIn(email, password));
+			console.log("2. Calling signIn API...");
+			const result = await signIn(email, password);
+			console.log("3. signIn API succeeded:", result);
+			onSignedIn(result);
 		} catch (cause) {
-			setError(describe(cause));
+			console.log("4. Catch block hit! Raw cause:", cause);
+			setError(describe(cause) || "Fallback: Error caught");
 		} finally {
+			console.log("5. Finally block reached.");
 			setBusy(false);
 		}
 	}
+	
 
 	return (
 		<View style={styles.content}>
