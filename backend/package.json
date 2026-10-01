@@ -39,7 +39,7 @@
 		"ioredis": "^6.0.0",
 		"lacewing": "^1.0.1",
 		"mycocepurus-smithii": "^0.0.0",
-		"pg": "^8.22.0",
+		"pg": "^8.23.1",
 		"phasmid": "^1.0.0",
 		"pino": "^10.3.1",
 		"pino-pretty": "^13.1.3",
