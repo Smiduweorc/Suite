@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+# Not build output: dung beetle's surface test, which the generator rewrites.
+!api-client/tests/dist/
+*.tsbuildinfo
+
+# Environment - .env.example is committed, every other .env is not
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Editors / OS
+.DS_Store
+.idea/
+
+# Test output
+coverage/

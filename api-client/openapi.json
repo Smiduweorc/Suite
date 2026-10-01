@@ -1,0 +1,1146 @@
+{
+	"openapi": "3.0.3",
+	"info": {
+		"title": "Suite API",
+		"description": "The bearer-only REST surface the mobile app uses. The web app uses tRPC.",
+		"version": "1.0.0"
+	},
+	"components": {
+		"securitySchemes": {
+			"bearer": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "JWT"
+			}
+		},
+		"schemas": {}
+	},
+	"paths": {
+		"/api/v1/auth/login": {
+			"post": {
+				"tags": [
+					"v1"
+				],
+				"summary": "Sign in",
+				"description": "Any alias of the account's mailbox works: the email is canonicalized with phasmid before lookup.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"email",
+									"password"
+								],
+								"properties": {
+									"email": {
+										"type": "string"
+									},
+									"password": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"application/x-www-form-urlencoded": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"email",
+									"password"
+								],
+								"properties": {
+									"email": {
+										"type": "string"
+									},
+									"password": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"email",
+									"password"
+								],
+								"properties": {
+									"email": {
+										"type": "string"
+									},
+									"password": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Response for status 200",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"user",
+										"accessToken",
+										"refreshToken"
+									],
+									"properties": {
+										"user": {
+											"type": "object",
+											"required": [
+												"id",
+												"email",
+												"name",
+												"role"
+											],
+											"properties": {
+												"id": {
+													"format": "uuid",
+													"type": "string"
+												},
+												"email": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string"
+												},
+												"role": {
+													"type": "string",
+													"enum": [
+														"user",
+														"admin"
+													]
+												}
+											}
+										},
+										"accessToken": {
+											"description": "lacewing at+jwt. Send as `Authorization: Bearer`.",
+											"type": "string"
+										},
+										"refreshToken": {
+											"description": "Opaque, single use. Trade it at /auth/refresh.",
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Response for status 400",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Response for status 401",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Response for status 409",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Response for status 422",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Response for status 503",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "postApiV1AuthLogin"
+			}
+		},
+		"/api/v1/auth/refresh": {
+			"post": {
+				"tags": [
+					"v1"
+				],
+				"summary": "Rotate a session",
+				"description": "Single use: the refresh token sent is revoked, a new one returned.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"application/x-www-form-urlencoded": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Response for status 200",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"user",
+										"accessToken",
+										"refreshToken"
+									],
+									"properties": {
+										"user": {
+											"type": "object",
+											"required": [
+												"id",
+												"email",
+												"name",
+												"role"
+											],
+											"properties": {
+												"id": {
+													"format": "uuid",
+													"type": "string"
+												},
+												"email": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string"
+												},
+												"role": {
+													"type": "string",
+													"enum": [
+														"user",
+														"admin"
+													]
+												}
+											}
+										},
+										"accessToken": {
+											"description": "lacewing at+jwt. Send as `Authorization: Bearer`.",
+											"type": "string"
+										},
+										"refreshToken": {
+											"description": "Opaque, single use. Trade it at /auth/refresh.",
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Response for status 400",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Response for status 401",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Response for status 409",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Response for status 422",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Response for status 503",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "postApiV1AuthRefresh"
+			}
+		},
+		"/api/v1/auth/logout": {
+			"post": {
+				"tags": [
+					"v1"
+				],
+				"summary": "End a session",
+				"description": "Revokes the refresh token sent, so it can no longer be traded at /auth/refresh. Needs no access token: the refresh token is the credential. Idempotent: an already revoked, expired or unknown token gets the same 200, so a retry or a second sign-out is never an error. Ends this one session only; other devices stay signed in. Access tokens issued to this session stop working at once.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"application/x-www-form-urlencoded": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"refreshToken"
+								],
+								"properties": {
+									"refreshToken": {
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "Response for status 200",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"ok"
+									],
+									"properties": {
+										"ok": {
+											"const": true,
+											"type": "boolean"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Response for status 400",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Response for status 422",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "postApiV1AuthLogout"
+			}
+		},
+		"/api/v1/feed": {
+			"get": {
+				"tags": [
+					"v1"
+				],
+				"summary": "Public feed",
+				"description": "Published posts, newest first. Cached with Repletes (stale-while-revalidate, stale-if-error); `cache.state` says which.",
+				"responses": {
+					"200": {
+						"description": "Response for status 200",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"posts",
+										"cache"
+									],
+									"properties": {
+										"posts": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"required": [
+													"id",
+													"title",
+													"body",
+													"authorId",
+													"createdAt",
+													"updatedAt"
+												],
+												"properties": {
+													"id": {
+														"format": "uuid",
+														"type": "string"
+													},
+													"title": {
+														"type": "string"
+													},
+													"body": {
+														"type": "string"
+													},
+													"authorId": {
+														"format": "uuid",
+														"type": "string"
+													},
+													"createdAt": {
+														"format": "date-time",
+														"type": "string"
+													},
+													"updatedAt": {
+														"format": "date-time",
+														"type": "string"
+													}
+												}
+											}
+										},
+										"cache": {
+											"description": "Straight from Repletes: where this answer came from, and how old it is.",
+											"type": "object",
+											"required": [
+												"state",
+												"ageMs"
+											],
+											"properties": {
+												"state": {
+													"type": "string",
+													"enum": [
+														"fresh",
+														"stale",
+														"retained",
+														"miss"
+													]
+												},
+												"ageMs": {
+													"type": "number"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Response for status 400",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Response for status 401",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Response for status 409",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Response for status 422",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Response for status 503",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "getApiV1Feed"
+			}
+		},
+		"/api/v1/posts": {
+			"post": {
+				"tags": [
+					"v1"
+				],
+				"summary": "Create a post, exactly once",
+				"description": "Idempotent per the IETF Idempotency-Key draft (mycocepurus-smithii): a retry with the same key replays the first response; the same key with a different body is 422; a concurrent duplicate is 409.",
+				"security": [
+					{
+						"bearer": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "idempotency-key",
+						"in": "header",
+						"required": false,
+						"schema": {
+							"description": "Required. An RFC 8941 String: a quoted value, e.g. `\"3f1c...\"`. Retries must reuse it.",
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"title",
+									"body"
+								],
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"body": {
+										"type": "string"
+									},
+									"published": {
+										"type": "boolean"
+									}
+								}
+							}
+						},
+						"application/x-www-form-urlencoded": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"title",
+									"body"
+								],
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"body": {
+										"type": "string"
+									},
+									"published": {
+										"type": "boolean"
+									}
+								}
+							}
+						},
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"title",
+									"body"
+								],
+								"properties": {
+									"title": {
+										"type": "string"
+									},
+									"body": {
+										"type": "string"
+									},
+									"published": {
+										"type": "boolean"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"201": {
+						"description": "Response for status 201",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"id",
+										"title",
+										"body",
+										"published",
+										"authorId",
+										"createdAt",
+										"updatedAt"
+									],
+									"properties": {
+										"id": {
+											"format": "uuid",
+											"type": "string"
+										},
+										"title": {
+											"type": "string"
+										},
+										"body": {
+											"type": "string"
+										},
+										"published": {
+											"type": "boolean"
+										},
+										"authorId": {
+											"format": "uuid",
+											"type": "string"
+										},
+										"createdAt": {
+											"format": "date-time",
+											"type": "string"
+										},
+										"updatedAt": {
+											"format": "date-time",
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Response for status 400",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Response for status 401",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Response for status 409",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Response for status 422",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Response for status 503",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"required": [
+										"error",
+										"message",
+										"requestId"
+									],
+									"properties": {
+										"error": {
+											"description": "Machine-readable code",
+											"type": "string"
+										},
+										"message": {
+											"type": "string"
+										},
+										"requestId": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "postApiV1Posts"
+			}
+		}
+	}
+}

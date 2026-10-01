@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package bevd.user.v1;
+
+import "auth.proto";
+
+// Admin only, every method. A missing token is UNAUTHENTICATED; a valid token belonging
+// to an ordinary user is PERMISSION_DENIED.
+service UserService {
+	rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+	rpc SetUserRole(SetUserRoleRequest) returns (bevd.auth.v1.User);
+	rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+// Oldest first, one page per call. To read on, send the response's next_cursor back as
+// cursor.
+message ListUsersRequest {
+	// Unset means 0 in proto3, which the server reads as "use the default" (20). Anything
+	// else must be 1-100: a larger page is INVALID_ARGUMENT, not quietly shortened.
+	int32 limit = 1;
+	// Empty for the first page. Opaque: a cursor the server did not issue for this list
+	// is INVALID_ARGUMENT.
+	string cursor = 2;
+}
+
+message ListUsersResponse {
+	repeated bevd.auth.v1.User users = 1;
+	// Empty on the last page, and only then.
+	string next_cursor = 2;
+}
+
+message SetUserRoleRequest {
+	string user_id = 1;
+	// "user" or "admin".
+	string role = 2;
+}
+
+message DeleteUserRequest {
+	string user_id = 1;
+}
+
+message DeleteUserResponse {
+	string id = 1;
+}

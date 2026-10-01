@@ -1,0 +1,46 @@
+# The build context is the template root, and the runtime stage copies backend/ wholesale.
+# Anything not listed here ends up baked into the image.
+
+# Installed inside the image, for the image's platform. A host node_modules - carrying
+# native binaries built for the wrong libc - must never be copied over that.
+# `**/` matters: a bare `node_modules/` only matches the root, and backend/node_modules
+# (symlinks under Bun's isolated linker) would otherwise be copied from the host.
+**/node_modules/
+
+# Stale local build output. The container runs from src/.
+**/dist/
+**/*.tsbuildinfo
+
+# Secrets. .env.example is documentation and stays. `**/` again: the one that matters
+# is backend/.env, which a bare `.env` (root only) would let into the image.
+**/.env
+**/.env.*
+!**/.env.example
+
+.git/
+.github/
+.vscode/
+**/coverage/
+**/*.log
+
+# Tests, their helpers and tooling config: none of it runs in production. src/test/
+# imports PGlite, a devDependency the image does not have.
+**/*.test.ts
+**/__tests__/
+**/__integration__/
+backend/src/test/
+backend/vitest.config.ts
+backend/drizzle.config.ts
+backend/scripts/
+README.md
+biome.jsonc
+commitlint.config.js
+lefthook.yml
+docker-compose.yml
+
+# Not part of the server image.
+frontend/src/
+mobile/
+api-client/
+!mobile/package.json
+!api-client/package.json

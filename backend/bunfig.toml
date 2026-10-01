@@ -1,0 +1,3 @@
+[test]
+preload = ["./src/test/preload.ts"]
+coveragePathIgnorePatterns = ["**/*.test.ts", "src/test/**", "src/__integration__/**", "src/db/seed.ts"]

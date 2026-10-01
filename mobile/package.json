@@ -1,0 +1,31 @@
+{
+	"name": "@suite/mobile",
+	"version": "1.0.0",
+	"main": "index.ts",
+	"dependencies": {
+		"@suite/api-client": "workspace:*",
+		"expo": "~57.0.26",
+		"expo-crypto": "~57.0.3",
+		"expo-secure-store": "~57.0.4",
+		"expo-status-bar": "~57.0.1",
+		"firefly-limiter": "^1.0.1",
+		"phasmid": "^1.0.0",
+		"react": "19.2.3",
+		"react-native": "0.86.3",
+		"react-native-safe-area-context": "~5.7.0"
+	},
+	"devDependencies": {
+		"@types/react": "~19.2.2",
+		"typescript": "~6.0.3"
+	},
+	"scripts": {
+		"start": "bun run --cwd ../api-client build && expo start",
+		"android": "bun run --cwd ../api-client build && expo start --android",
+		"ios": "bun run --cwd ../api-client build && expo start --ios",
+		"web": "bun run --cwd ../api-client build && expo start --web",
+		"typecheck": "tsc --noEmit",
+		"test": "bun test src"
+	},
+	"private": true,
+	"description": "Expo app on the Suite API: generated dung beetle client, firefly retries, idempotent writes, phasmid on device."
+}

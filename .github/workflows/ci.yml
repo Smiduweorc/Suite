@@ -1,0 +1,208 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request makes the running checks moot.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# What backend/Dockerfile runs (oven/bun:1.3-alpine). setup-bun resolves "1.3.x" to the
+# newest 1.3 release, which is what that tag points at. Change the two together.
+env:
+  BUN_VERSION: 1.3.x
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # A full run takes a few minutes; a hung step should not hold a runner for six hours.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Lint + format
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      # Tests run against PGlite (Postgres in-process), so no database service here.
+      - name: Test
+        run: bun run test
+
+      # Frontend only - the backend ships as TypeScript and is not bundled.
+      - name: Build
+        run: bun run build
+
+  # What PGlite cannot show: it runs one transaction at a time, so a refresh race never
+  # races, statement_timeout is never Postgres' own, and SET NX is ioredis-mock's. The
+  # images and health checks are docker-compose.yml's. (A service container cannot take a
+  # command, so this Redis keeps its default snapshotting; nothing tested depends on it.)
+  integration:
+    runs-on: ubuntu-latest
+    # About a minute when healthy; the slowest test waits 5s on purpose.
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bevd
+          POSTGRES_PASSWORD: bevd
+          POSTGRES_DB: bevd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bevd -d bevd"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # Unset, these would make every test skip; under CI the setup refuses that instead.
+      - name: Integration tests
+        env:
+          INTEGRATION_DATABASE_URL: postgres://bevd:bevd@localhost:5432/bevd
+          INTEGRATION_REDIS_URL: redis://localhost:6379
+        run: bun run test:integration
+
+  # The image, not the source tree: what is in it, who it runs as, and whether it boots.
+  # Every other job passes on a server that cannot start, because the tests import src/
+  # and never boot the process. argon2 is a native addon, and the failure this guards
+  # against is one where every test passes and the image dies on its first line because
+  # the .node binary for musl cannot be resolved.
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # A developer's tree has these and a fresh checkout does not. Planted so the check
+      # below can fail: .dockerignore is what keeps them out, not their absence.
+      - name: Plant files the image must not contain
+        run: printf 'JWT_SECRET=planted-must-not-ship\n' | tee .env backend/.env backend/.env.local > /dev/null
+
+      - name: Build
+        run: docker build -f backend/Dockerfile -t suite-backend:ci .
+
+      - name: No secrets, tests or history; not root
+        run: |
+          leaks=$(docker run --rm --network none --entrypoint sh suite-backend:ci -c '
+            find /app -path "*/node_modules" -prune -o \( \
+              -name ".env*" ! -name ".env.example" -o -name .git -o -name "*.test.ts" \
+              -o -name __tests__ -o -name __integration__ -o -path /app/backend/src/test \
+            \) -print')
+          if [ -n "$leaks" ]; then
+            echo "in the image, and should not be:"
+            echo "$leaks"
+            exit 1
+          fi
+
+          uid=$(docker run --rm --network none --entrypoint id suite-backend:ci -u)
+          if [ "$uid" = 0 ]; then
+            echo "the image runs as root"
+            exit 1
+          fi
+          echo "nothing leaked; runs as uid $uid"
+
+      # No database: pg connects lazily, so /health responds without one. Nothing listens
+      # on REDIS_URL either: ioredis connects in the background and the stores degrade.
+      - name: Boot and answer /health
+        env:
+          NODE_ENV: production
+          PORT: "3000"
+          GRPC_PORT: "50051"
+          LOG_LEVEL: info
+          SERVICE_NAME: ci-image
+          DATABASE_URL: postgres://unused:unused@localhost:5432/unused
+          REDIS_URL: redis://localhost:6379
+          CORS_ORIGIN: http://localhost:5173
+          # A throwaway key, but a random-looking one: lacewing entropy-checks
+          # it at boot and a "ci-smoke-secret..." style string refuses to import.
+          JWT_SECRET: KxTa6t5hnM9lWSWZclyiVjcc+E+s7smif8Tvvrorh0TgxU5lzqpu1AsVsQTjMMZb
+          JWT_ACCESS_EXPIRY: 15m
+          JWT_ISSUER: http://localhost:3000
+          JWT_AUDIENCE: http://localhost:3000/trpc
+          REFRESH_TOKEN_TTL_DAYS: "7"
+          COOKIE_SAME_SITE: lax
+        run: |
+          docker run -d --name backend -p 127.0.0.1:3000:3000 \
+            -e NODE_ENV -e PORT -e GRPC_PORT -e LOG_LEVEL -e SERVICE_NAME -e DATABASE_URL \
+            -e REDIS_URL -e CORS_ORIGIN -e JWT_SECRET -e JWT_ACCESS_EXPIRY -e JWT_ISSUER \
+            -e JWT_AUDIENCE -e REFRESH_TOKEN_TTL_DAYS -e COOKIE_SAME_SITE \
+            suite-backend:ci
+          trap 'docker logs backend; docker rm -f backend > /dev/null' EXIT
+
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/health; then
+              echo
+              echo "image booted and served /health"
+              exit 0
+            fi
+            # Still starting, or already dead - if it is dead, stop waiting on a corpse.
+            [ "$(docker inspect -f '{{.State.Running}}' backend)" = true ] || {
+              echo "container exited during startup"
+              exit 1
+            }
+            sleep 1
+          done
+
+          echo "container never answered /health"
+          exit 1
+
+  # Cephalote: weak and broken cryptography (MD5, DES, RC4, short RSA keys, hardcoded
+  # keys, static IVs). Pinned to a release and checked against its published checksums,
+  # because a security scanner fetched unverified is its own supply-chain problem.
+  #
+  # The release binary is the zero-cgo profile, which scans TypeScript with the
+  # low-confidence regex analyzer - so every finding fails the build rather than only
+  # high-confidence ones. Silence a reviewed false positive in a cephalote.yaml
+  # (rules.disable), not by loosening this step.
+  crypto-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CEPHALOTE_VERSION: 0.1.0
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Cephalote
+        run: |
+          gh release download "v${CEPHALOTE_VERSION}" -R Smiduweorc/Cephalote \
+            -p "cephalote_${CEPHALOTE_VERSION}_linux_amd64.tar.gz" -p checksums.txt -D /tmp/cephalote
+          cd /tmp/cephalote
+          sha256sum --ignore-missing -c checksums.txt
+          tar xzf "cephalote_${CEPHALOTE_VERSION}_linux_amd64.tar.gz" cephalote
+
+      - name: Scan
+        run: /tmp/cephalote/cephalote scan . --exit-code
