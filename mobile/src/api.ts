@@ -19,7 +19,7 @@ import { backend, resilientFetch } from "./transport";
 
 // EXPO_PUBLIC_ variables are inlined at build time. On an Android emulator the host
 // machine is 10.0.2.2; on a physical device, use your computer's LAN address.
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.0.97:3000";
 
 const client = new ApiClient({ baseUrl: API_URL, transport: resilientFetch(backend) });
 

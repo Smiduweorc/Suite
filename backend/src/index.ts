@@ -17,7 +17,7 @@ const suite = createSuite(
 const app = createApp({ db, log: logger, suite });
 const grpcServer = createGrpcServer({ db, log: logger, suite });
 
-app.listen(env.PORT, (server) => {
+app.listen({ port: env.PORT, hostname: "0.0.0.0" }, (server) => {
 	logger.info(
 		{
 			rest: `http://${server.hostname}:${server.port}/health`,
