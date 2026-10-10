@@ -30,7 +30,7 @@ export function LoginScreen({ onSignedIn }: { onSignedIn: (session: Session) => 
 	async function submit() {
 		setBusy(true);
 		setError(null);
-	
+
 		try {
 			const result = await signIn(email, password);
 			onSignedIn(result);
@@ -40,7 +40,6 @@ export function LoginScreen({ onSignedIn }: { onSignedIn: (session: Session) => 
 			setBusy(false);
 		}
 	}
-	
 
 	return (
 		<View style={styles.content}>
