@@ -1,0 +1,60 @@
+version: 2
+
+updates:
+  # Bun workspaces: one entry at the root covers backend, frontend, api-client and mobile
+  # through bun.lock.
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Minor and patch bumps land together; majors get a PR each so they can be migrated.
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+        exclude-patterns: ["expo", "expo-*", "react", "react-dom", "react-native", "react-native-*"]
+      # Expo SDK packages must move in lockstep with expo itself.
+      expo-sdk:
+        patterns: ["expo", "expo-*", "react", "react-dom", "react-native", "react-native-*"]
+      trpc:
+        patterns: ["@trpc/*"]
+      commitlint:
+        patterns: ["@commitlint/*"]
+    ignore:
+      # Pinned to the Node major the project targets (lacewing requires Node 24).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
