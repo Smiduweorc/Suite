@@ -24,7 +24,7 @@ jobs:
     # A full run takes a few minutes; a hung step should not hold a runner for six hours.
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -79,7 +79,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # A developer's tree has these and a fresh checkout does not. Planted so the check
       # below can fail: .dockerignore is what keeps them out, not their absence.
@@ -194,7 +194,7 @@ jobs:
       CEPHALOTE_VERSION: 0.1.0
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Cephalote
         run: |
