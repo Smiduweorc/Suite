@@ -29,6 +29,9 @@ updates:
       # Pinned to the Node major the project targets (lacewing requires Node 24).
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # Pinned to the major openapi-typescript depends on (api-client/tools/generator/document.ts).
+      - dependency-name: "@redocly/openapi-core"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

@@ -82,6 +82,33 @@ describe("RedisLedgerStore", () => {
 		});
 	});
 
+	it("leaves another attempt's claim alone on complete and release", async () => {
+		const store = new RedisLedgerStore<string>(client);
+		const claim = {
+			state: "in-flight" as const,
+			fingerprint: "f",
+			claimedAt: 0,
+			leaseFor: 5_000,
+			owner: "retry",
+		};
+		await store.claim("k", claim);
+		const completion = {
+			state: "complete" as const,
+			fingerprint: "f",
+			value: "late",
+			storedAt: 1,
+			retainFor: 60_000,
+		};
+
+		expect(await store.complete("k", completion, "stale")).toBe(false);
+		expect(await store.release("k", "stale")).toBe(false);
+		expect(JSON.parse((await client.get("k")) ?? "null")).toEqual(claim);
+
+		expect(await store.complete("k", completion, "retry")).toBe(true);
+		expect(await store.release("k", "retry")).toBe(false);
+		expect(JSON.parse((await client.get("k")) ?? "null")).toEqual(completion);
+	});
+
 	it("sets a TTL on what it writes, as a hint for reclaiming space", async () => {
 		await ledger.run(request, async () => "x");
 

@@ -59,7 +59,7 @@ const Env = type({
 	CORS_ORIGIN: "string > 0",
 
 	// lacewing also entropy-checks it: a human-chosen passphrase, even a long one, throws
-	// EntropyCheckFailed. Generate one with `openssl rand -base64 48`.
+	// ENTROPY_CHECK_FAILED. Generate one with `openssl rand -base64 48`.
 	JWT_SECRET: "string >= 32",
 	JWT_ACCESS_EXPIRY: AccessExpiry,
 	// `iss`/`aud` are pinned at verification; a token minted for another

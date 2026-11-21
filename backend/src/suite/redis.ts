@@ -103,15 +103,61 @@ export class RedisLedgerStore<T> implements LedgerStore<T> {
 		});
 	}
 
-	complete(key: string, entry: Completion<T>): Promise<void> {
+	/**
+	 * Owner-checked in one round trip: an attempt that outlived its lease must not overwrite
+	 * the claim of the retry that replaced it. The claim key carries PX leaseFor, so a key
+	 * that still exists is a live claim.
+	 */
+	complete(key: string, entry: Completion<T>, owner: string): Promise<boolean> {
 		return guarded("complete", async () => {
-			await this.redis.set(key, JSON.stringify(entry), "PX", entry.retainFor);
+			const done = await this.redis.eval(
+				COMPLETE_IF_OWNER,
+				1,
+				key,
+				JSON.stringify(owner),
+				JSON.stringify(entry),
+				Math.max(1, Math.ceil(entry.retainFor)),
+			);
+
+			return done === 1;
 		});
 	}
 
-	release(key: string): Promise<void> {
+	release(key: string, owner: string): Promise<boolean> {
 		return guarded("release", async () => {
+			const done = await this.redis.eval(RELEASE_IF_OWNER, 1, key, JSON.stringify(owner));
+
+			return done === 1;
+		});
+	}
+
+	forget(key: string): Promise<void> {
+		return guarded("forget", async () => {
 			await this.redis.del(key);
 		});
 	}
 }
+
+/**
+ * Shared prefix: proceed only if KEYS[1] holds an in-flight claim whose owner is ARGV[1]
+ * (passed JSON-quoted).
+ * Plain substring matches rather than cjson, which ioredis-mock lacks: the claim is written
+ * by JSON.stringify above, so `"state":"in-flight"` and `"owner":"<uuid>"` appear verbatim,
+ * and a complete entry has no `owner` field at all.
+ */
+const OWNS = `
+local raw = redis.call("GET", KEYS[1])
+if not raw then return 0 end
+if not string.find(raw, '"state":"in-flight"', 1, true) then return 0 end
+if not string.find(raw, '"owner":' .. ARGV[1], 1, true) then return 0 end
+`;
+
+const COMPLETE_IF_OWNER = `${OWNS}
+redis.call("SET", KEYS[1], ARGV[2], "PX", ARGV[3])
+return 1
+`;
+
+const RELEASE_IF_OWNER = `${OWNS}
+redis.call("DEL", KEYS[1])
+return 1
+`;

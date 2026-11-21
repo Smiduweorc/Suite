@@ -23,8 +23,8 @@
 		"test": "tsc && node --test 'tests/dist/*.test.js'"
 	},
 	"devDependencies": {
-		"@redocly/openapi-core": "^1.34.20",
-		"@types/node": "^24.12.3",
+		"@redocly/openapi-core": "^1.34.24",
+		"@types/node": "^24",
 		"@types/pluralize": "^0.0.33",
 		"openapi-typescript": "^7.13.0",
 		"pluralize": "^8.0.0"
