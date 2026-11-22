@@ -1,12 +1,12 @@
 # base-lacewing: auth, CSRF and sessions
 
 This repo started from `bevd/base-lacewing` in
-[plates](https://github.com/grMLEqomlkkU5Eeinz4brIrOVCUCkJuN/plates). Its auth, CSRF,
+[plates](https://github.com/grmlqSOTFTtk/plates). Its auth, CSRF,
 gRPC and authorization notes below still apply; the [README](../README.md) covers what the
 rest of the suite adds and how to run it.
 
 base-lacewing is
-[`bevd/base-jwt`](https://github.com/grMLEqomlkkU5Eeinz4brIrOVCUCkJuN/plates/tree/master/bevd/base-jwt)
+[`bevd/base-jwt`](https://github.com/grmlqSOTFTtk/plates/tree/master/bevd/base-jwt)
 (Bun, Elysia, Vue, Drizzle, JWT auth and roles) rebuilt on
 [lacewing](https://github.com/Smiduweorc/lacewing), plus double-submit CSRF. The JWT
 checks `auth/jwt.ts` used to do by hand are now lacewing's. Opaque refresh tokens and CSRF
@@ -100,7 +100,7 @@ and the claims lacewing requires on every access token (`typ`, `iss`, `aud`, `jt
   When a second service has to verify these tokens, switch to `generateKeyPair()` (EdDSA)
   and give the profile a `{ jwksUri }`; lacewing handles caching and rotation. With HMAC
   across services every verifier can also mint tokens. If you have to do it anyway,
-  [symmetric-jwks.md](https://github.com/grMLEqomlkkU5Eeinz4brIrOVCUCkJuN/plates/blob/master/docs/symmetric-jwks.md)
+  [symmetric-jwks.md](https://github.com/grmlqSOTFTtk/plates/blob/master/docs/symmetric-jwks.md)
   in plates covers the safe setups and the one that leaks your signing key.
 - `Bun.password`. It is the same argon2id, but Bun-only, and Vitest workers run under
   Node. `@node-rs/argon2` produces the same hash and runs under both.
