@@ -1,4 +1,4 @@
-FROM oven/bun:1.3-alpine AS deps
+FROM oven/bun:1.4-alpine AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 # Every workspace's manifest, or a frozen install refuses the lockfile - but only the
@@ -17,7 +17,7 @@ RUN bun install --frozen-lockfile --production --filter '@bevd/backend'
 # through a runtime platform check, the bundler rewrites those requires relative to the
 # original package directory, nothing can load the binary from dist/, and the build
 # still exits 0: a green CI shipping an image that dies on the first line.
-FROM oven/bun:1.3-alpine AS runtime
+FROM oven/bun:1.4-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
